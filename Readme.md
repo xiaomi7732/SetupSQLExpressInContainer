@@ -124,5 +124,161 @@ Various SQL Server SKUs, for example, Develoer Editon, Express Edition are set b
 
 ## Configuring the SQL Server Container
 
+A lot of customizations could be done by `/var/opt/mssql/mssql.conf` file, if we have configuration files avaialbe locally, the matter is about mount it inside the container. Here's an example:
+
+1. Create the configuration file([mssql.conf](./mssql.conf)), and save it to, for example, `c:\sql-express-data\`:
+
+   ```init
+   [sqlagent]
+   enabled = true
+   ```
+
+1. Delete the running container:
+
+   ```shell
+   docker rm -f mssql-express
+   ```
+
+1. Map it into the container
+
+   ```shell
+   docker run --name "mssql-express" -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>' `
+   -v c:/sql-express-data/mssql.conf:/var/opt/mssql/mssql.conf `
+   -d mcr.microsoft.com/mssql/server
+   ```
+
+1. Check the configuration exists
+
+   ```shell
+   docker exec -it mssql-express /bin/bash
+   
+   mssql@98c798b5b1a5:/$ cat /var/opt/mssql/mssql.conf 
+   
+   [sqlagent]
+   enabled = true
+   ```
+
 ## How to Preserve the Data Stored in the MySQL Docker Container
+
+We are going to create a volume and mount it to where the data is stored in our container. Here are the steps:
+
+1. Create a volume:
+
+   ```shell
+   docker volume create mssql-data
+   ```
+
+   The `volume create` command creates a dedicated storage on your local file system for the volume. After the volume is mounted, all container data will be linked to it.
+
+1. Again, if you are running the container, stop and remove it:
+
+   ```docker
+   docker stop mssql-express
+   docker rm mssql-express
+   ```
+
+1. Restart the container with the volume mounted:
+
+   ```docker
+   docker run --name "mssql-express" -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=yourStrong(!)Password" -e "MSSQL_PID=Express" -v mssql-data:/var/opt/mssql -d mcr.microsoft.com/mssql/server
+   ```
+
+1. **List** the volume, or **inspect** it:
+
+   ```shell
+   > docker volume ls     
+   DRIVER    VOLUME NAME
+   local     mssql-data
+
+   > docker volume inspect mssql-data
+   [
+      {
+         "CreatedAt": "2024-11-01T17:40:21Z",
+         "Driver": "local",
+         "Labels": null,
+         "Mountpoint": "/var/lib/docker/volumes/mssql-data/_data",
+         "Name": "mssql-data",
+         "Options": null,
+         "Scope": "local"
+      }
+   ]
+   ```
+
+   Notice the `MountPoint`, that is the path **supposely** on your localbox. The thing for **Windows** users, is that its managed by the container manager, like `Docker Desktop`. And there's an additional mapping from the mount point to the physical directory. For example, on my box, the actual physical mouting point is:
+
+   ```shell
+   \\wsl.localhost\docker-desktop-data\data\docker\volumes\mssql-data\_data
+   ```
+
+It is also possible to map the directories on manually without using `docker volume`. There are 3 directories to map, `data`, `log` and `secrets`:
+
+1. Create a local folder to host the data
+
+   ```shell
+   mkdir c:\sql-express-data
+   ```
+
+1. Again, if you are running the container, stop and remove it:
+
+   ```docker
+   docker stop mssql-express
+   docker rm mssql-express
+   ```
+
+1. Run the container with the storage mapping:
+
+   ```powershell
+   docker run --name "mssql-express" -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>' `
+   -v c:/sql-express-data/data:/var/opt/mssql/data `
+   -v c:/sql-express-data/log:/var/opt/mssql/log `
+   -v c:/sql-express-data/secrets:/var/opt/mssql/secrets `
+   -d mcr.microsoft.com/mssql/server
+   ```
+
+1. Inspect the data:
+
+   ```powershell
+   PS > ls C:\sql-express-data\
+
+    Directory: C:\sql-express-data
+
+   Mode                 LastWriteTime         Length Name
+   ----                 -------------         ------ ----
+   d----           11/1/2024 11:13 AM                data
+   d----           11/1/2024 11:13 AM                log
+   d----           11/1/2024 11:13 AM                secrets
+   ```
+
+   > Note: Since the folder for the data is also the folder for `mssql.conf`, you would think a simple mapping could be:
+
+   ```powershell
+   docker run --name "mssql-express" -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>' `
+   -v c:/sql-express-data:/var/opt/mssql/ `
+   -d mcr.microsoft.com/mssql/server
+   ```
+
+   That is problematic because there is a `.system` folder being persistented too. And that will cause headache in the future.
+
+## The Final Command
+
+Throughout the article, our `docker run` command has evolved significantly. So, let's put together all its variations into one, final master command. We have to stop and remove the container again. We will remove the volume as well to start from scratch:
+
+```bash
+docker stop mssql-express; docker rm mssql-express
+docker volume rm mssql-data
+```
+
+So, here is the final master command:
+
+```shell
+docker run --name "mssql-express" -e 'ACCEPT_EULA=Y' -e "MSSQL_PID=Express" -e 'MSSQL_SA_PASSWORD=yourStrong(!)Password' `
+-p 1434:1433 `
+-v c:/sql-express-data/data:/var/opt/mssql/data `
+-v c:/sql-express-data/log:/var/opt/mssql/log `
+-v c:/sql-express-data/secrets:/var/opt/mssql/secrets `
+-v c:/sql-express-data/mssql.conf:/var/opt/mssql/mssql.conf `
+-d mcr.microsoft.com/mssql/server
+```
+
+This command mounts our previous `mssql.conf` local file to the desired location, as well as the mssql directory for data persistent. It also maps local port of `1434` to the well known `1433`.
 
