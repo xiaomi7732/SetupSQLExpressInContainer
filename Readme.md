@@ -73,55 +73,56 @@ Various SQL Server SKUs, for example, Develoer Editon, Express Edition are set b
 
       Notice that `1433/tcp` is the port the container's listening on, but there's no local port working for it.
 
-1. Connecting to the SQL Server Container Locally
+## Connecting to the SQL Server Container Locally
 
-   1. Install sqlcmd in your system, for exmaple
+1. Install sqlcmd in your system, for exmaple
 
-      ```shell
-      winget install sqlcmd --source winget
-      ```
+   ```shell
+   winget install sqlcmd --source winget
+   ```
 
-   1. After installation, if you are running the container, stop and remove it:
+1. After installation, if you are running the container, stop and remove it:
 
-      ```docker
-      docker stop mssql-express
-      docker rm mssql-express
-      ```
+   ```docker
+   docker stop mssql-express
+   docker rm mssql-express
+   ```
 
-   1. Next, we will restart the container by mapping a port from the container to a port on our local machine:
+1. Next, we will restart the container by **mapping a port** from the container to a port on our local machine:
 
-      ```shell
-      docker run --name "mssql-express" -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=yourStrong(!)Password" -e "MSSQL_PID=Express" -p 1434:1433 -d mcr.microsoft.com/mssql/server
-      ```
+   ```shell
+   docker run --name "mssql-express" -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=yourStrong(!)Password" -e "MSSQL_PID=Express" -p 1434:1433 -d mcr.microsoft.com/mssql/server
+   ```
 
-      * `-p 1434:1433`: Maps the container's port 1433 (the default port for SQLServer) to your local port 1434. This means any traffic sent to your local port 1434 will be forwarded to the container's port 1433 and your SQL server will be accessible on that port.
+   * `-p 1434:1433`: Maps the container's port 1433 (the default port for SQLServer) to your local port 1434. This means any traffic sent to your local port 1434 will be forwarded to the container's port 1433 and your SQL server will be accessible on that port.
 
-   1. After terminal outputs a new ID for the container, we can check the port mappings:
+1. After terminal outputs a new ID for the container, we can check the port mappings:
 
-      ```shell
-      docker port mssql-express
-      1433/tcp -> 0.0.0.0:1434
-      ```
+   ```shell
+   docker port mssql-express
+   1433/tcp -> 0.0.0.0:1434
+   ```
 
-      It was successful! Now, from your local machine, you can connect to the server on port 1434 using mysql client:
+   It was successful! Now, from your local machine, you can connect to the server on port 1434 using mysql client:
 
-      ```shell
-      sqlcmd -S localhost,1434 -U sa -P "yourStrong(!)Password"
-      1> SELECT @@VERSION
-      2> go
-      Microsoft SQL Server 2022 (RTM-CU15-GDR) (KB5046059) - 16.0.4150.1 (X64)
-        Sep 25 2024 17:34:41
-        Copyright (C) 2022 Microsoft Corporation
-        Express Edition (64-bit) on Linux (Ubuntu 22.04.5 LTS) <X64>
-      (1 rows affected)
-      ...
-      ```
+   ```shell
+   sqlcmd -S localhost,1434 -U sa -P "yourStrong(!)Password"
+   1> SELECT @@VERSION
+   2> go
+   Microsoft SQL Server 2022 (RTM-CU15-GDR) (KB5046059) - 16.0.4150.1 (X64)
+      Sep 25 2024 17:34:41
+      Copyright (C) 2022 Microsoft Corporation
+      Express Edition (64-bit) on Linux (Ubuntu 22.04.5 LTS) <X64>
+   (1 rows affected)
+   ...
+   ```
 
-      * `-S localhost,1434` the server address is `localhost`, port of `1434`, the separator is a comma(`,`), not a semi-colon(`;`).
+   * `-S localhost,1434` the server address is `localhost`, port of `1434`, the separator is a comma(`,`), not a semi-colon(`;`).
 
-      > Note  
-      Newer versions of sqlcmd (in mssql-tools18) are secure by default. If using version 18 or higher, you need to add the `No` option to sqlcmd to specify that encryption is optional, not mandatory.
+   > Note  
+   Newer versions of sqlcmd (in mssql-tools18) are secure by default. If using version 18 or higher, you need to add the `No` option to sqlcmd to specify that encryption is optional, not mandatory.
 
 ## Configuring the SQL Server Container
 
 ## How to Preserve the Data Stored in the MySQL Docker Container
+
