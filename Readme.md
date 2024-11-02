@@ -31,6 +31,7 @@ Various SQL Server SKUs, for example, `Develoer Editon`, `Express Edition` is se
 
    * `--name "mssql-express"` specify the name for the running container.
    * `-e "MSSQL_SA_PASSWORD=yourStrong(!)Password"` the environemnt variable of `MSSQL_SA_PASSWORD` will be used as the admin password. And the user name will be `sa`.
+   * `-e "MSSQL_PID=Express"` sets the SKU to the Express.
 
 1. Check the container is up & running
 
