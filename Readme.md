@@ -4,10 +4,10 @@ Trying to run SQL Express inside a container and connect to it locally.
 
 ## Prereq
 
-* Docker Desktop
+* Docker Desktop (because I am using Windows here)
 * Select the SKU
 
-Various SQL Server SKUs, for example, Develoer Editon, Express Edition are set by the environment variable of `MSSQL_PID`. Refer to the docker hub page for more info: <https://hub.docker.com/r/microsoft/mssql-server>. Here's a quick reference:
+Various SQL Server SKUs, for example, `Develoer Editon`, `Express Edition` is set by the environment variable of `MSSQL_PID`. Refer to the docker hub page for more info: <https://hub.docker.com/r/microsoft/mssql-server>. Here's a quick reference:
 
 * Developer : This will run the container using the Developer Edition (this is the default if no MSSQL_PID environment variable is supplied)
 * Express : This will run the container using the Express Edition
@@ -28,6 +28,9 @@ Various SQL Server SKUs, for example, Develoer Editon, Express Edition are set b
    ```shell
    docker run --name "mssql-express" -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=yourStrong(!)Password" -e "MSSQL_PID=Express" -d mcr.microsoft.com/mssql/server
    ```
+
+   * `--name "mssql-express"` specify the name for the running container.
+   * `-e "MSSQL_SA_PASSWORD=yourStrong(!)Password"` the environemnt variable of `MSSQL_SA_PASSWORD` will be used as the admin password. And the user name will be `sa`.
 
 1. Check the container is up & running
 
@@ -120,7 +123,7 @@ Various SQL Server SKUs, for example, Develoer Editon, Express Edition are set b
    * `-S localhost,1434` the server address is `localhost`, port of `1434`, the separator is a comma(`,`), not a semi-colon(`;`).
 
    > Note  
-   Newer versions of sqlcmd (in mssql-tools18) are secure by default. If using version 18 or higher, you need to add the `No` option to sqlcmd to specify that encryption is optional, not mandatory.
+   Different than the sqlcmd inside the container, I am using ODBC version 17 here on my localbox. Newer versions of sqlcmd (in mssql-tools18) are secure by default. If using version 18 or higher, you need to add the `No` option to sqlcmd to specify that encryption is optional, not mandatory.
 
 ## Configuring the SQL Server Container
 
@@ -157,6 +160,10 @@ A lot of customizations could be done by `/var/opt/mssql/mssql.conf` file, if we
    [sqlagent]
    enabled = true
    ```
+
+To find out what can be configured: <https://learn.microsoft.com/sql/linux/sql-server-linux-configure-mssql-conf>.
+
+
 
 ## How to Preserve the Data Stored in the MySQL Docker Container
 
@@ -210,7 +217,9 @@ We are going to create a volume and mount it to where the data is stored in our 
    \\wsl.localhost\docker-desktop-data\data\docker\volumes\mssql-data\_data
    ```
 
-It is also possible to map the directories on manually without using `docker volume`. There are 3 directories to map, `data`, `log` and `secrets`:
+   Putting that into consideration, I prefer the next method of mapping even thought it takes a few more maps than a volume.
+
+It is also possible to map the directories manually without using `docker volume`. There are 3 directories to map, `data`, `log` and `secrets`:
 
 1. Create a local folder to host the data
 
@@ -257,18 +266,18 @@ It is also possible to map the directories on manually without using `docker vol
    -d mcr.microsoft.com/mssql/server
    ```
 
-   That is problematic because there is a `.system` folder being persistented too. And that will cause headache in the future.
+   That’s an issue because the `.system` folder is also being persisted, which could lead to complications down the line.
 
 ## The Final Command
 
-Throughout the article, our `docker run` command has evolved significantly. So, let's put together all its variations into one, final master command. We have to stop and remove the container again. We will remove the volume as well to start from scratch:
+Throughout the article, our `docker run` command has evolved significantly. So, let's put together all its variations into one, final command. We have to stop and remove the container again. We will remove the volume as well to start from scratch:
 
 ```bash
 docker stop mssql-express; docker rm mssql-express
 docker volume rm mssql-data
 ```
 
-So, here is the final master command:
+So, here is the final command:
 
 ```shell
 docker run --name "mssql-express" -e 'ACCEPT_EULA=Y' -e "MSSQL_PID=Express" -e 'MSSQL_SA_PASSWORD=yourStrong(!)Password' `
@@ -280,5 +289,14 @@ docker run --name "mssql-express" -e 'ACCEPT_EULA=Y' -e "MSSQL_PID=Express" -e '
 -d mcr.microsoft.com/mssql/server
 ```
 
-This command mounts our previous `mssql.conf` local file to the desired location, as well as the mssql directory for data persistent. It also maps local port of `1434` to the well known `1433`.
+This command mounts our previous `mssql.conf` local file to the desired location, as well as the mssql directories for data persistent. It also maps local port of `1434` to the well known `1433`.
 
+## Conclusion
+
+In this guide, we've successfully set up SQL Server Express in a Docker container, enabling you to run a lightweight instance of SQL Server locally. By pulling the appropriate image, configuring environment variables, and managing port mappings, we ensured that our SQL Server instance is both accessible and customizable.
+
+We also explored advanced configuration options, such as using a custom `mssql.conf` file and persisting data through `Docker volumes`. This flexibility allows for tailored setups, whether you're experimenting with SQL Server features or developing applications.
+
+By following the final command provided, you can easily recreate or modify your SQL Server Express container with all necessary configurations, ensuring a robust development environment. With this setup, you're now ready to leverage SQL Server's capabilities right from your local machine! If you have any further questions or need assistance, feel free to reach out. Happy coding!
+
+Oh, give me a thumbup, please.
