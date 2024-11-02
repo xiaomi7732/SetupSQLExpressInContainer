@@ -85,6 +85,8 @@ Various SQL Server SKUs, for example, `Develoer Editon`, `Express Edition` is se
    winget install sqlcmd --source winget
    ```
 
+   > Note: Any other SQL Management tools, SSMS for example, should work too.
+
 1. After installation, if you are running the container, stop and remove it:
 
    ```docker
